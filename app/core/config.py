@@ -6,18 +6,40 @@ from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _normalize_postgres_scheme(url: str) -> str:
+    """部分平台使用 postgres://，统一为 postgresql://。"""
+    if url.startswith("postgres://"):
+        return "postgresql://" + url[len("postgres://") :]
+    return url
+
+
+def _ensure_async_postgres_driver(url: str) -> str:
+    """
+    Railway 等常提供无驱动的 ``postgresql://...``，SQLAlchemy 2 会默认走 psycopg2；
+    本项目使用 asyncpg + psycopg v3，此处强制 ``postgresql+asyncpg://``。
+    """
+    u = _normalize_postgres_scheme(url)
+    if not u.startswith("postgresql"):
+        return u
+    dialect = u.split("://", 1)[0]
+    if "+" not in dialect:
+        return u.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return u
+
+
 def _async_to_sync_database_url(async_url: str) -> str:
     """
     将异步驱动数据库 URL 转为 Alembic / 同步引擎可用的 URL。
 
     例如 ``sqlite+aiosqlite:///dev.db`` → ``sqlite:///dev.db``；
-    ``postgresql+asyncpg://...`` → ``postgresql+psycopg://...``。
+    ``postgresql+asyncpg://...`` → ``postgresql+psycopg://...``（psycopg3，非 psycopg2）。
     """
-    if async_url.startswith("sqlite+aiosqlite"):
-        return async_url.replace("sqlite+aiosqlite", "sqlite", 1)
-    if async_url.startswith("postgresql+asyncpg"):
-        return async_url.replace("postgresql+asyncpg", "postgresql+psycopg", 1)
-    return async_url
+    u = _ensure_async_postgres_driver(async_url)
+    if u.startswith("sqlite+aiosqlite"):
+        return u.replace("sqlite+aiosqlite", "sqlite", 1)
+    if u.startswith("postgresql+asyncpg"):
+        return u.replace("postgresql+asyncpg", "postgresql+psycopg", 1)
+    return u
 
 
 class Settings(BaseSettings):
@@ -53,31 +75,30 @@ class Settings(BaseSettings):
     railway_public_domain: str | None = Field(
         default=None,
         validation_alias="RAILWAY_PUBLIC_DOMAIN",
-        description="Railway 自动注入的公网域名（通常为 RAILWAY_PUBLIC_DOMAIN）",
+        description="Railway 自动注入的公网域名",
     )
 
-    @computed_field  # type: ignore[prop-decorator]
+    @computed_field # type: ignore[prop-decorator]
     @property
     def public_upload_base_url_effective(self) -> str:
-        """最终对外上传 URL 前缀：优先 public_upload_base_url，其次 Railway 域名。"""
+        """最终对外上传 URL 前缀"""
         if self.public_upload_base_url:
             return self.public_upload_base_url.rstrip("/")
         if self.railway_public_domain:
-            # Railway 通常提供形如 xxx.up.railway.app
             return f"https://{self.railway_public_domain}/static/uploads"
         return "http://127.0.0.1:8000/static/uploads"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sqlalchemy_database_uri(self) -> str:
-        """异步 SQLAlchemy 使用的数据库 URL（与 ``database_url`` 一致）。"""
-        return self.database_url
+        """异步 SQLAlchemy 使用的数据库 URL（规范化 Railway 裸 postgresql://）。"""
+        return _ensure_async_postgres_driver(self.database_url)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sqlalchemy_database_uri_sync(self) -> str:
-        """Alembic 等同步迁移使用的数据库 URL。"""
-        return _async_to_sync_database_url(self.database_url)
+        """Alembic 等同步迁移使用的数据库 URL（``postgresql+psycopg``，需安装 psycopg[binary]）。"""
+        return _async_to_sync_database_url(self.sqlalchemy_database_uri)
 
 
 @lru_cache
