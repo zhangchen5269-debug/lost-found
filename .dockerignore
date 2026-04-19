@@ -1,0 +1,42 @@
+# Git 与 IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+
+# Python 虚拟环境与本机缓存
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+.eggs
+dist
+build
+*.egg
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# 本地环境与本机数据库（勿打进镜像）
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+dev.db
+
+# 文档与杂项（按需取消注释）
+# *.md
+# docs/
+
+# 上传目录（由 Volume 挂载提供；打进镜像无意义且可能很大）
+uploads
