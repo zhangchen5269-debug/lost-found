@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.core.database import engine
 from app.core.response import error_response, success_response
 from app.db.init_db import ensure_item_type_varchar
-from app.routers import auth, items
+from app.routers import auth, fix_db, items
 
 
 @asynccontextmanager
@@ -47,6 +47,7 @@ app.mount("/static/uploads", StaticFiles(directory=str(upload_path)), name="uplo
 
 app.include_router(auth.router, prefix="/auth", tags=["认证"])
 app.include_router(items.router, prefix="/items", tags=["物品"])
+app.include_router(fix_db.router)
 
 
 @app.exception_handler(HTTPException)
