@@ -31,7 +31,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    """从应用配置读取同步数据库 URL。"""
+    """从应用配置读取同步数据库 URL（环境变量 DATABASE_URL，经 config 规范为 postgresql+psycopg）。"""
     return settings.sqlalchemy_database_uri_sync
 
 

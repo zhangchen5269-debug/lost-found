@@ -49,7 +49,7 @@ class Item(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    item_type: Mapped[ItemType] = mapped_column(Enum(ItemType), nullable=False, index=True)
+    item_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     location: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     event_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     category: Mapped[ItemCategory] = mapped_column(Enum(ItemCategory), nullable=False, index=True)
