@@ -15,11 +15,11 @@ async def create_item(db: AsyncSession, *, obj_in: ItemCreate, owner_id: int) ->
     item = Item(
         title=obj_in.title,
         description=obj_in.description,
-        item_type=ItemType(obj_in.item_type.value),
+        item_type=str(obj_in.item_type.value),
         location=obj_in.location,
         event_date=obj_in.event_date,
-        category=ItemCategory(obj_in.category.value),
-        status=ItemStatus.open,
+        category=str(obj_in.category.value),
+        status=str(ItemStatus.open.value),
         image_url=obj_in.image_url,
         user_id=owner_id,
     )
@@ -46,9 +46,9 @@ def _apply_filters(
 ) -> Select[tuple[Item]]:
     """为列表查询附加筛选条件。"""
     if item_type is not None:
-        stmt = stmt.where(Item.item_type == item_type)
+        stmt = stmt.where(Item.item_type == str(item_type.value))
     if category is not None:
-        stmt = stmt.where(Item.category == category)
+        stmt = stmt.where(Item.category == str(category.value))
     if location:
         stmt = stmt.where(Item.location.ilike(f"%{location}%"))
     if event_date_from is not None:
@@ -163,11 +163,11 @@ async def update_item(db: AsyncSession, *, db_obj: Item, obj_in: ItemUpdate) -> 
         if value is None:
             continue
         if field == "item_type":
-            setattr(db_obj, field, ItemType(str(value)))
+            setattr(db_obj, field, str(value))
         elif field == "category":
-            setattr(db_obj, field, ItemCategory(str(value)))
+            setattr(db_obj, field, str(value))
         elif field == "status":
-            setattr(db_obj, field, ItemStatus(str(value)))
+            setattr(db_obj, field, str(value))
         else:
             setattr(db_obj, field, value)
     await db.flush()
@@ -182,7 +182,7 @@ async def delete_item(db: AsyncSession, *, db_obj: Item) -> None:
 
 async def claim_item(db: AsyncSession, *, db_obj: Item, claimant: User) -> Item:
     """认领：将状态改为 claimed 并记录认领人。"""
-    db_obj.status = ItemStatus.claimed
+    db_obj.status = str(ItemStatus.claimed.value)
     db_obj.claimant_id = claimant.id
     await db.flush()
     return db_obj

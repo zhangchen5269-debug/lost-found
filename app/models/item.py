@@ -6,7 +6,7 @@ import enum
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -52,11 +52,11 @@ class Item(Base):
     item_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     location: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     event_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    category: Mapped[ItemCategory] = mapped_column(Enum(ItemCategory), nullable=False, index=True)
+    category: Mapped[ItemCategory] = mapped_column(String(32), nullable=False, index=True)
     status: Mapped[ItemStatus] = mapped_column(
-        Enum(ItemStatus),
+        String(16),
         nullable=False,
-        default=ItemStatus.open,
+        default=ItemStatus.open.value,
         index=True,
     )
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)

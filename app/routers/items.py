@@ -14,7 +14,7 @@ from app.core.database import get_db
 from app.core.response import Responder, get_responder
 from app.crud import item as item_crud
 from app.dependencies.auth import get_current_user
-from app.models.item import ItemCategory, ItemStatus, ItemType
+from app.models.item import ItemStatus
 from app.models.user import User
 from app.schemas.response import SuccessResponse
 from app.schemas.item import (
@@ -281,8 +281,8 @@ async def list_items_endpoint(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    item_type: ItemType | None = Query(default=None, description="lost 或 found"),
-    category: ItemCategory | None = Query(default=None, description="物品分类"),
+    item_type: str | None = Query(default=None, description="lost 或 found"),
+    category: str | None = Query(default=None, description="物品分类"),
     location: str | None = Query(default=None, description="地点模糊搜索"),
     event_date_from: str | None = Query(default=None, description="事件日期起 YYYY-MM-DD"),
     event_date_to: str | None = Query(default=None, description="事件日期止 YYYY-MM-DD"),

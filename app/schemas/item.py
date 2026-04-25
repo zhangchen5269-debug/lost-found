@@ -1,34 +1,10 @@
 """物品相关 Schema。"""
 
 from datetime import date, datetime
-from enum import Enum
+
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-
-class ItemTypeSchema(str, Enum):
-    """API 层物品类型枚举。"""
-
-    lost = "lost"
-    found = "found"
-
-
-class ItemCategorySchema(str, Enum):
-    """API 层分类枚举（值与 ORM 一致，描述见 Field）。"""
-
-    id_document = "id_document"
-    electronics = "electronics"
-    clothing = "clothing"
-    keys = "keys"
-    backpack = "backpack"
-    other = "other"
-
-
-class ItemStatusSchema(str, Enum):
-    """API 层状态枚举。"""
-
-    open = "open"
-    claimed = "claimed"
-    resolved = "resolved"
 
 
 class ItemBase(BaseModel):
@@ -36,10 +12,10 @@ class ItemBase(BaseModel):
 
     title: str = Field(..., max_length=200, description="标题")
     description: str = Field(default="", description="详细描述")
-    item_type: ItemTypeSchema = Field(..., description="lost=丢失, found=拾获")
+    item_type: Literal["lost", "found"] = Field(..., description="lost | found")
     location: str = Field(default="", max_length=255, description="地点/位置描述")
     event_date: date = Field(..., description="丢失或拾到日期")
-    category: ItemCategorySchema = Field(
+    category: str = Field(
         ...,
         description="分类：id_document 证件, electronics 电子产品, clothing 衣物, keys 钥匙, backpack 背包, other 其他",
     )
@@ -55,11 +31,11 @@ class ItemUpdate(BaseModel):
 
     title: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None)
-    item_type: ItemTypeSchema | None = None
+    item_type: Literal["lost", "found"] | None = None
     location: str | None = Field(default=None, max_length=255)
     event_date: date | None = None
-    category: ItemCategorySchema | None = None
-    status: ItemStatusSchema | None = Field(
+    category: Literal["id_document", "electronics", "clothing", "keys", "backpack", "other"] | None = None
+    status: Literal["open", "claimed", "resolved"] | None = Field(
         default=None,
         description="发布者可将其更新为 resolved；其他状态由业务接口维护",
     )
@@ -69,10 +45,10 @@ class ItemUpdate(BaseModel):
 class ItemRead(ItemBase):
     """物品详情响应。"""
 
-    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
-    status: ItemStatusSchema
+    status: str
     user_id: int = Field(..., description="发布者用户 ID")
     claimant_id: int | None = Field(default=None, description="认领人用户 ID")
     created_at: datetime
@@ -81,8 +57,8 @@ class ItemRead(ItemBase):
 class ItemListFilters(BaseModel):
     """列表查询筛选参数（由依赖或路由组装）。"""
 
-    item_type: ItemTypeSchema | None = None
-    category: ItemCategorySchema | None = None
+    item_type: str | None = None
+    category: str | None = None
     location: str | None = None
     event_date_from: date | None = None
     event_date_to: date | None = None
