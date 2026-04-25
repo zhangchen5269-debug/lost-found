@@ -21,7 +21,6 @@ from app.schemas.item import (
     ClaimedItemsListData,
     ItemCreate,
     ItemRead,
-    ItemStatusSchema,
     ItemUpdate,
     MyItemsListData,
 )
@@ -366,9 +365,9 @@ async def update_item_endpoint(
         return r.error(message="只有发布者可以修改物品", code=status.HTTP_403_FORBIDDEN)
 
     if body.status is not None:
-        if body.status != ItemStatusSchema.resolved:
+        if body.status != "resolved":
             return r.error(message="状态字段仅允许由发布者更新为 resolved", code=status.HTTP_400_BAD_REQUEST)
-        if item.status != ItemStatus.claimed:
+        if item.status != ItemStatus.claimed.value:
             return r.error(message="只有已认领（claimed）的物品可标记为已解决（resolved）", code=status.HTTP_400_BAD_REQUEST)
 
     updated = await item_crud.update_item(db, db_obj=item, obj_in=body)
@@ -419,7 +418,7 @@ async def claim_item_endpoint(
         return r.error(message="物品不存在", code=status.HTTP_404_NOT_FOUND)
     if item.user_id == current_user.id:
         return r.error(message="不能认领自己发布的物品", code=status.HTTP_400_BAD_REQUEST)
-    if item.status != ItemStatus.open:
+    if item.status != ItemStatus.open.value:
         return r.error(message="该物品当前不可认领", code=status.HTTP_400_BAD_REQUEST)
     claimed = await item_crud.claim_item(db, db_obj=item, claimant=current_user)
     await db.commit()

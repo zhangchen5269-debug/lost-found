@@ -5,7 +5,7 @@ from datetime import date
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.item import Item, ItemCategory, ItemStatus, ItemType
+from app.models.item import Item, ItemStatus
 from app.models.user import User
 from app.schemas.item import ItemCreate, ItemUpdate
 
@@ -15,10 +15,10 @@ async def create_item(db: AsyncSession, *, obj_in: ItemCreate, owner_id: int) ->
     item = Item(
         title=obj_in.title,
         description=obj_in.description,
-        item_type=str(obj_in.item_type.value),
+        item_type=str(obj_in.item_type),
         location=obj_in.location,
         event_date=obj_in.event_date,
-        category=str(obj_in.category.value),
+        category=str(obj_in.category),
         status=str(ItemStatus.open.value),
         image_url=obj_in.image_url,
         user_id=owner_id,
@@ -37,8 +37,8 @@ async def get_item(db: AsyncSession, item_id: int) -> Item | None:
 def _apply_filters(
     stmt: Select[tuple[Item]],
     *,
-    item_type: ItemType | None,
-    category: ItemCategory | None,
+    item_type: str | None,
+    category: str | None,
     location: str | None,
     event_date_from: date | None,
     event_date_to: date | None,
@@ -46,9 +46,9 @@ def _apply_filters(
 ) -> Select[tuple[Item]]:
     """为列表查询附加筛选条件。"""
     if item_type is not None:
-        stmt = stmt.where(Item.item_type == str(item_type.value))
+        stmt = stmt.where(Item.item_type == str(item_type))
     if category is not None:
-        stmt = stmt.where(Item.category == str(category.value))
+        stmt = stmt.where(Item.category == str(category))
     if location:
         stmt = stmt.where(Item.location.ilike(f"%{location}%"))
     if event_date_from is not None:
@@ -72,8 +72,8 @@ async def list_items(
     *,
     skip: int,
     limit: int,
-    item_type: ItemType | None = None,
-    category: ItemCategory | None = None,
+    item_type: str | None = None,
+    category: str | None = None,
     location: str | None = None,
     event_date_from: date | None = None,
     event_date_to: date | None = None,

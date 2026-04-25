@@ -1,6 +1,7 @@
 """FastAPI 应用入口：中间件、路由注册与全局异常处理。"""
 
 from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -14,12 +15,17 @@ from app.core.response import error_response, success_response
 from app.db.init_db import ensure_item_type_varchar
 from app.routers import auth, fix_db, items
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期：确保上传目录存在并修复数据库列类型。"""
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
-    await ensure_item_type_varchar(engine)
+    try:
+        await ensure_item_type_varchar(engine)
+    except Exception as exc:
+        logger.warning("启动时跳过 item_type 自动修复：%s", exc)
     yield
 
 

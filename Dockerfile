@@ -24,5 +24,5 @@ RUN mkdir -p /data/uploads
 
 EXPOSE 8000
 
-# 启动命令
-CMD /bin/sh -c "set -e; cd /app; alembic upgrade head; exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips '*' --workers ${UVICORN_WORKERS:-1}"
+# 启动命令（不在容器启动时自动执行迁移）
+CMD /bin/sh -c "set -e; cd /app; exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips '*' --workers ${UVICORN_WORKERS:-1}"
